@@ -1,18 +1,18 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 
 def get_gmail_service(credentials):
     # Créer le service pour la récupération de mails
-    
     service = build("gmail", "v1", credentials=credentials)
 
     return service
 
 
 def list_unsubscribe_emails(service):
+
+    # Dictionnaire expéditeurs mails
+    dict_senders = {}
+
     # Demander à Gmail la liste des mails qui match la recherhe
     result = service.users().messages().list(
         userId="me",
@@ -57,8 +57,38 @@ def list_unsubscribe_emails(service):
             if header["name"] == "List-Unsubscribe":
                 unsubscribe_value = header["value"]
 
+        # Remplir le dictionnaire d'expéditeurs
+        email = extract_email(from_value, "<", ">")
+
+        domain = extract_domain(email, "@")
+
         # Afficher les résultats
         print(f'{from_value}')
         print(f'{subject_value}')
         print(f'{unsubscribe_value}')
+        print(f"{email}")
+        print(f"{domain}")
         print("-------------")
+
+
+
+        if not domain in dict_senders:
+            dict_senders[domain] = 1
+        else:
+            dict_senders[domain] += 1
+
+    print(f'{dict_senders}')
+        
+# Recherche de l'adresse email à partir du header
+def extract_email(from_value, first, last):
+    start = from_value.index(first) + len(first)
+    end = from_value.index(last, start)
+
+    return from_value[start:end]
+            
+# Recherche du domaine
+def extract_domain(email, at):
+    start = email.index(at) + 1
+    end = len(email)
+
+    return email[start:end]
