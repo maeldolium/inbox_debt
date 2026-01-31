@@ -44,7 +44,7 @@ def list_unsubscribe_emails(service):
 
         from_value = ""
         subject_value = ""
-        unsubscribe_value = ""
+        unsubscribe_link = ""
 
         # Parcourir les headers pour trouver ceux voulue
         for header in headers:
@@ -56,19 +56,31 @@ def list_unsubscribe_emails(service):
                 subject_value = header["value"]
 
             if header["name"] == "List-Unsubscribe":
-                unsubscribe_value = header["value"]
+                unsubscribe_link = header["value"]
 
         # Rechercher l'email et le nom de domaine dans le header
         email, domain = extract_domain(from_value)
 
         # Remplir le dictionnaire et compter les occurrences
         if not domain in dict_senders:
-            dict_senders[domain] = 1
+            dict_senders[domain] = {
+                "count": 1,
+                "subjects": [subject_value],
+                "unsubscribe_links": [unsubscribe_link],
+                "message_ids": [message_id]
+            }
         else:
-            dict_senders[domain] += 1
+            dict_senders[domain]["count"] += 1
+            dict_senders[domain]["subjects"].append(subject_value)
+            dict_senders[domain]["unsubscribe_links"].append(unsubscribe_link)
+            dict_senders[domain]["message_ids"].append(message_id)
 
+ 
     # Afficher les domaines et leur nombre d'occurrences
-    print(f'{dict_senders}')
+    print(f"{'Domain':<30} {'Count':<8} {'Subjects':<10} {'Links':<10}")
+    print("-" * 60)
+    for domain, data in dict_senders.items():
+        print(f"{domain:<30} {data['count']:<8} {len(data['subjects']):<10} {len(data['unsubscribe_links']):<10}")
             
 # Recherche du domaine
 def extract_domain(from_value):
