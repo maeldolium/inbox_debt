@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from email.utils import parseaddr
 
 def get_gmail_service(credentials):
     # Créer le service pour la récupération de mails
@@ -57,38 +58,24 @@ def list_unsubscribe_emails(service):
             if header["name"] == "List-Unsubscribe":
                 unsubscribe_value = header["value"]
 
-        # Remplir le dictionnaire d'expéditeurs
-        email = extract_email(from_value, "<", ">")
+        # Rechercher l'email et le nom de domaine dans le header
+        email, domain = extract_domain(from_value)
 
-        domain = extract_domain(email, "@")
-
-        # Afficher les résultats
-        print(f'{from_value}')
-        print(f'{subject_value}')
-        print(f'{unsubscribe_value}')
-        print(f"{email}")
-        print(f"{domain}")
-        print("-------------")
-
-
-
+        # Remplir le dictionnaire et compter les occurrences
         if not domain in dict_senders:
             dict_senders[domain] = 1
         else:
             dict_senders[domain] += 1
 
+    # Afficher les domaines et leur nombre d'occurrences
     print(f'{dict_senders}')
-        
-# Recherche de l'adresse email à partir du header
-def extract_email(from_value, first, last):
-    start = from_value.index(first) + len(first)
-    end = from_value.index(last, start)
-
-    return from_value[start:end]
             
 # Recherche du domaine
-def extract_domain(email, at):
-    start = email.index(at) + 1
-    end = len(email)
+def extract_domain(from_value):
+    
+    email = parseaddr(from_value)[1]
 
-    return email[start:end]
+    domain = email.split("@")[1]
+
+    return (email, domain)
+
