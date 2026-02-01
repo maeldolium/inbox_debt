@@ -17,7 +17,7 @@ def list_unsubscribe_emails(service):
     # Demander à Gmail la liste des mails qui match la recherhe
     result = service.users().messages().list(
         userId="me",
-        q="unsubscribe",
+        q="category:promotions OR unsubscribe OR \"désinscrire\"",
         maxResults=20
     ).execute()
 

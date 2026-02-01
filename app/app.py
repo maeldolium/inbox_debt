@@ -3,12 +3,15 @@ from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails
 import webbrowser
 
 def main():
+    # Connexion avec OAuth2
     credentials = auth()
 
+    # Service pour la récupération des mails
     service = get_gmail_service(credentials)
 
+    # Récupération des mails
     dict_senders = list_unsubscribe_emails(service)
-
+    
     if not dict_senders:
         print("Aucun domaine à traiter")
         return
