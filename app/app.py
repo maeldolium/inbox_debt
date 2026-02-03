@@ -1,5 +1,6 @@
 from auth.oauth_flow import auth
 from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails
+from gmail_api.actions import trash_message
 import webbrowser
 
 def main():
@@ -23,15 +24,11 @@ def main():
         print(f"{domain:<30} {data['count']:<8} {len(data['subjects']):<10} {len(data['unsubscribe_links']):<10}")
     
 
-    # Tester l'ouverture de lien http
+    # Supprimer les mails d'un domaine
     for domain in dict_senders:
         domain_test = dict_senders[domain]
-
-        for link in domain_test["unsubscribe_links"]:
-            if link:
-                webbrowser.open_new_tab(link)
-                return
-    
+        trash_message(service, domain_test["message_ids"])
+        return
     
     
 main()
