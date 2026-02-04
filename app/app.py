@@ -23,12 +23,31 @@ def main():
     for domain, data in dict_senders.items():
         print(f"{domain:<30} {data['count']:<8} {len(data['subjects']):<10} {len(data['unsubscribe_links']):<10}")
     
+    # Lister les domaines
+    mapping = {i + 1: domain for i, domain in enumerate(dict_senders)}
 
-    # Supprimer les mails d'un domaine
-    for domain in dict_senders:
-        domain_test = dict_senders[domain]
-        trash_message(service, domain_test["message_ids"])
-        return
-    
+    print("Quel domaine voulez-vous supprimer ?")
+
+    for id, domain in mapping.items():
+        print(f'{id}. {domain}')
+
+    # Choix du domaine par l'utilisateur et suppresion des mails
+    # correspondant si l'utilisateur confirme son choix
+    while True:
+        try:
+            user_choice = int(input("Votre choix: "))
+
+            if user_choice in mapping:
+                domain = mapping[user_choice]
+
+                user_choice = str(input(f'Etes vous sûr de vouloir supprimer {domain} ? (y/n)'))
+
+                if user_choice == 'y':
+                    trash_message(service, dict_senders[domain]["message_ids"])
+                    return
+            else:
+                print("Choix invalide !")
+        except ValueError:
+            print("Entrez un numéro !")    
     
 main()
