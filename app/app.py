@@ -40,7 +40,7 @@ def main():
         domain, count, subjects = select_domain(mapping)
 
         # Affichage du menu des actions
-        display_actions(domain, count)
+        display_actions(domain, count, filtered_senders[domain]['unsubscribe_links'])
 
         # Choix de l'action
         action = select_action()
@@ -48,21 +48,35 @@ def main():
         match(action):
             # Quitter le programme
             case 0: break
-            # Supprimer les mails
+            # Supprimer tous les mails
             case 1:
                 if confirm_deletion(domain, count, subjects, filtered_senders[domain]['unsubscribe_links']) == True:
                     trash_message(service, filtered_senders[domain]["message_ids"])
                     del filtered_senders[domain]
-                    mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count']} 
+                    mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count'], 'subjects': filtered_senders[d]['subjects'], 'unsubscribe_links': filtered_senders[d]['unsubscribe_links']} 
                             for i, d in enumerate(filtered_senders)}
-            # Ajouter  la safelist
+            # Supprimer seulement les mails avec lien de désinscription
             case 2:
+                ids_with_link = [filtered_senders[domain]["message_ids"][i] 
+                                for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if link]
+                if ids_with_link:
+                    if confirm_deletion(domain, len(ids_with_link), subjects, filtered_senders[domain]['unsubscribe_links']) == True:
+                        trash_message(service, ids_with_link)
+                        # Mettre à jour les données du domaine
+                        filtered_senders[domain]["message_ids"] = [filtered_senders[domain]["message_ids"][i] 
+                                                                    for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if not link]
+                        filtered_senders[domain]["unsubscribe_links"] = [link for link in filtered_senders[domain]["unsubscribe_links"] if not link]
+                        filtered_senders[domain]["count"] -= len(ids_with_link)
+                else:
+                    print("Aucun mail avec lien de désinscription pour ce domaine.")
+            # Ajouter à la safelist
+            case 3:
                 add_domain_to_safelist(domain)
                 del filtered_senders[domain]
-                mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count']} 
+                mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count'], 'subjects': filtered_senders[d]['subjects'], 'unsubscribe_links': filtered_senders[d]['unsubscribe_links']} 
                             for i, d in enumerate(filtered_senders)}
             # Retour au menu principale
-            case 3:
+            case 4:
                 continue
 
             case _:
