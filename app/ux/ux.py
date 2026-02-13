@@ -34,10 +34,25 @@ def select_action():
     user_choice = int(input("> "))
     return user_choice
 
-def confirm_deletion(domain, count, subjects):
-    print(f"Domaine : {domain}")
-    print(f"Nombre de mails : {count}\n")
+def count_with_without_link_mails(unsubscribe_links):
+    with_link = 0
+    without_link = 0
     
+    for link in unsubscribe_links:
+        if link:  # Si le lien existe et n'est pas vide
+            with_link += 1
+        else:
+            without_link += 1
+
+    return with_link, without_link
+
+def confirm_deletion(domain, count, subjects, unsubscribe_links):
+    with_link, without_link = count_with_without_link_mails(unsubscribe_links)
+    print(f"Domaine : {domain}")
+    print(f"Nombre de mails : {count}")
+    print(f"Avec lien unsubscribe : {with_link}")
+    print(f"Sans lien : {without_link}\n")
+
     print("Exemples de sujets :")
     for subject in subjects[:3]:
         print(f'- {subject}')
