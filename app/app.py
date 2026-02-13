@@ -27,7 +27,7 @@ def main():
     filtered_senders = filter_safelist(dict_senders, safelist)
 
     # Lister les domaines avec le nombre de mails
-    mapping = {i + 1: {'domain': domain, 'count': filtered_senders[domain]['count']} 
+    mapping = {i + 1: {'domain': domain, 'count': filtered_senders[domain]['count'], 'subjects': filtered_senders[domain]['subjects']} 
            for i, domain in enumerate(filtered_senders)}
 
     # Tant qu'il y a des domaines dans mapping
@@ -37,7 +37,7 @@ def main():
         display_domains(mapping)
 
         # Choix du domaine
-        domain, count = select_domain(mapping)
+        domain, count, subjects = select_domain(mapping)
 
         # Affichage du menu des actions
         display_actions(domain, count)
@@ -50,7 +50,7 @@ def main():
             case 0: break
             # Supprimer les mails
             case 1:
-                if confirm_deletion(domain, count) == True:
+                if confirm_deletion(domain, count, subjects) == True:
                     trash_message(service, filtered_senders[domain]["message_ids"])
                     del filtered_senders[domain]
                     mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count']} 

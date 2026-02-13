@@ -13,8 +13,9 @@ def select_domain(senders):
         if domain_id in senders:
             domain = senders[domain_id]['domain']
             count = senders[domain_id]['count']
+            subjets = senders[domain_id]['subjects']
 
-            return domain, count
+            return domain, count, subjets
         elif domain_id == 0:
             exit()
         else:
@@ -33,8 +34,16 @@ def select_action():
     user_choice = int(input("> "))
     return user_choice
 
-def confirm_deletion(domain, count):
-    print(f"Confirmez la suppression de {count} mails de {domain} ? (y/n)")
+def confirm_deletion(domain, count, subjects):
+    print(f"Domaine : {domain}")
+    print(f"Nombre de mails : {count}\n")
+    
+    print("Exemples de sujets :")
+    for subject in subjects[:3]:
+        print(f'- {subject}')
+    print('\n')
+
+    print(f"Confirmez la suppression ? (y/n)")
 
     user_choice = str(input("> "))
 
