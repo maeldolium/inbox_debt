@@ -23,12 +23,14 @@ def select_domain(senders):
     except ValueError:
         print("Entrez un numéro !")
 
-def display_actions(sender, count):
-    print(f"Que voulez vous faire pour {sender}?\n")
+def display_actions(sender, count, unsubscribe_links):
+    with_link, without_link = count_with_without_link_mails(unsubscribe_links)
     
-    print(f'1. Supprimer ({count} mails)\n')
-    print("2. Ajouter à la safelist\n")
-    print("3. Retour\n")
+    print(f"Que voulez vous faire pour {sender}?\n")
+    print(f'1. Supprimer tous les mails ({count} mails)\n')
+    print(f'2. Supprimer seulement les mails avec lien de désinscription ({with_link} mails)\n')
+    print("3. Ajouter à la safelist\n")
+    print("4. Retour\n")
 
 def select_action():
     user_choice = int(input("> "))
