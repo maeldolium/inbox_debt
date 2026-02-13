@@ -36,4 +36,11 @@ def add_domain_to_safelist(domain):
         print("Domaine déjà dans la liste.")
         return False
     
+def filter_safelist(senders, safelist):
+    filtered_senders = {}
 
+    for sender in senders:
+        if sender not in safelist:
+            filtered_senders[sender] = senders[sender]
+            
+    return filtered_senders
