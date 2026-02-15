@@ -14,22 +14,34 @@ def list_unsubscribe_emails(service):
     # Dictionnaire expéditeurs mails
     dict_senders = {}
 
+    all_messages = []
+    page_token = None
+
     # Demander à Gmail la liste des mails qui match la recherhe
-    result = service.users().messages().list(
-        userId="me",
-        q="category:promotions OR unsubscribe OR \"désinscrire\"",
-        maxResults=20
-    ).execute()
+    while True:
+        result = service.users().messages().list(
+            userId="me",
+            q="category:promotions OR unsubscribe OR \"désinscrire\"",
+            maxResults=100,
+            pageToken=page_token
+        ).execute()
 
-    messages = result.get("messages", [])
+        messages = result.get("messages", [])
 
-    # Vérifier qu'il y a des messages
-    if not messages:
-        print("Aucun mail trouvé")
-        return dict_senders
+         # Vérifier qu'il y a des messages
+        if not messages:
+            print("Aucun mail trouvé")
+            return dict_senders
+
+        all_messages.extend(messages)
+
+        page_token = result.get("nextPageToken")
+
+        if not page_token:
+            break
     
     # Pour chaque message
-    for message in messages:
+    for message in all_messages:
         message_id = message["id"]
 
         # Récupérer les headers des messages
@@ -62,6 +74,7 @@ def list_unsubscribe_emails(service):
         # Rechercher l'email et le nom de domaine dans le header
         email, domain = extract_domain(from_value)
 
+        # Extraire les liens https de désinscription
         unsubscribe_links = extract_http_unsubscribe(unsubscribe_links)
 
         # Si le domaine n'est pas dans le dictionnaire
