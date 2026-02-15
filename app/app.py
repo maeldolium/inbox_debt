@@ -1,6 +1,6 @@
 from auth.oauth_flow import auth
 from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails
-from gmail_api.actions import trash_message
+from gmail_api.actions import delete_emails
 from ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
 from config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
 import webbrowser
@@ -51,7 +51,7 @@ def main():
             # Supprimer tous les mails
             case 1:
                 if confirm_deletion(domain, count, subjects, filtered_senders[domain]['unsubscribe_links']) == True:
-                    trash_message(service, filtered_senders[domain]["message_ids"])
+                    delete_emails(service, filtered_senders[domain]["message_ids"])
                     del filtered_senders[domain]
                     mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count'], 'subjects': filtered_senders[d]['subjects'], 'unsubscribe_links': filtered_senders[d]['unsubscribe_links']} 
                             for i, d in enumerate(filtered_senders)}
@@ -61,7 +61,7 @@ def main():
                                 for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if link]
                 if ids_with_link:
                     if confirm_deletion(domain, len(ids_with_link), subjects, filtered_senders[domain]['unsubscribe_links']) == True:
-                        trash_message(service, ids_with_link)
+                        delete_emails(service, ids_with_link)
                         # Mettre à jour les données du domaine
                         filtered_senders[domain]["message_ids"] = [filtered_senders[domain]["message_ids"][i] 
                                                                     for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if not link]

@@ -8,3 +8,17 @@ def trash_message(service, message_ids_list):
         id=message_ids_list[i]
         ).execute()
         print(f'Message supprimé : {message_ids_list[i]}')
+
+def delete_emails(service, message_ids_list):
+    if not message_ids_list:
+        return
+    
+    service.users().messages().batchModify(
+        userId="me",
+        body={
+            "ids": message_ids_list,
+            "addLabelIds": ["TRASH"]
+        }
+    ).execute()
+
+    print(f"Mails supprimés avec succès !")
