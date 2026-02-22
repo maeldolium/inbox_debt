@@ -14,7 +14,7 @@ def extract_domain(from_value):
 
     domain = parts[1]
 
-    return (email, domain)
+    return domain
 
 # Extraire les liens http de désinscription
 def extract_http_unsubscribe(unsubscribe_header):

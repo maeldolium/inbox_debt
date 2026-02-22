@@ -1,6 +1,7 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from gmail_api.parsers import extract_domain, extract_http_unsubscribe
+import time
 
 def get_gmail_service(credentials):
     # Créer le service pour la récupération de mails
@@ -40,57 +41,64 @@ def list_unsubscribe_emails(service):
         if not page_token:
             break
     
-    # Pour chaque message
-    for message in all_messages:
-        message_id = message["id"]
+    def callback(request_id, response, exception):
+        if exception:
+            print("Erreur :", exception)
+            return
 
-        # Récupérer les headers des messages
-        detail = service.users().messages().get(
-            userId="me",
-            id=message_id,
-            format="metadata",
-            metadataHeaders = ["From", "Subject", "List-Unsubscribe"]
-        ).execute()
+        headers = response.get("payload", {}).get("headers", [])
 
-        headers = detail["payload"]["headers"]
+        from_header = None
+        subject = None
+        unsubscribe = None
 
-        # Initialiser l'expéditeur, le sujet et le lien de désinscription
-        from_value = ""
-        subject_value = ""
-        unsubscribe_links = ""
-
-        # Parcourir les headers pour trouver ceux voulue
         for header in headers:
-
             if header["name"] == "From":
-                from_value = header["value"]
+                from_header = header["value"]
+            elif header["name"] == "Subject":
+                subject = header["value"]
+            elif header["name"] == "List-Unsubscribe":
+                unsubscribe = header["value"]
 
-            if header["name"] == "Subject":
-                subject_value = header["value"]
+        domain = extract_domain(from_header)
 
-            if header["name"] == "List-Unsubscribe":
-                unsubscribe_links = header["value"]
-
-        # Rechercher l'email et le nom de domaine dans le header
-        email, domain = extract_domain(from_value)
-
-        # Extraire les liens https de désinscription
-        unsubscribe_links = extract_http_unsubscribe(unsubscribe_links)
-
-        # Si le domaine n'est pas dans le dictionnaire
-        if not domain in dict_senders:
+        if domain not in dict_senders:
             dict_senders[domain] = {
-                "count": 1,
-                "subjects": [subject_value],
-                "unsubscribe_links": [unsubscribe_links],
-                "message_ids": [message_id]
+                "count": 0,
+                "subjects": [],
+                "unsubscribe_links": [],
+                "message_ids": []
             }
-        # Sinon rajouter un occurrence et les infos
-        else:
-            dict_senders[domain]["count"] += 1
-            dict_senders[domain]["subjects"].append(subject_value)
-            dict_senders[domain]["unsubscribe_links"].append(unsubscribe_links)
-            dict_senders[domain]["message_ids"].append(message_id)
+
+        dict_senders[domain]["count"] += 1
+        dict_senders[domain]["message_ids"].append(response["id"])
+
+        if subject:
+            dict_senders[domain]["subjects"].append(subject)
+
+        if unsubscribe:
+            dict_senders[domain]["unsubscribe_links"].append(unsubscribe)
+
+
+    # Traiter les messages par batch de 10 pour éviter le rate limit
+    batch_size = 10
+    for i in range(0, len(all_messages), batch_size):
+        batch = service.new_batch_http_request()
+        batch_messages = all_messages[i:i + batch_size]
+        
+        for message in batch_messages:
+            batch.add(
+                service.users().messages().get(
+                    userId="me",
+                    id=message["id"],
+                    format="metadata",
+                    metadataHeaders=["Subject", "From", "List-Unsubscribe"]
+                ),
+                callback=callback
+            )
+
+        batch.execute()
+        # Attendre un peu entre les batches pour respecter les limites de débit
+        time.sleep(0.5)
 
     return dict_senders
-            
