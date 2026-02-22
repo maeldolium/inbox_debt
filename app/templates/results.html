@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Résultats</title>
+</head>
+<body>
+    <h1>Résultats</h1>
+
+    <form action="/delete" method="post">
+    <table border="1">
+        <tr>
+            <th>Domaine</th>
+            <th>Nombre</th>
+            <th>Action</th>
+        </tr>
+
+        {% for domain, info in data.items() %}
+        <tr>
+            <td>{{ domain }}</td>
+            <td>{{ info.count }}</td>
+            <td>
+                <button name="domain" value="{{ domain }}">
+                    Supprimer
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</form>
+
+    <a href="/">Retour</a>
+</body>
+</html>
