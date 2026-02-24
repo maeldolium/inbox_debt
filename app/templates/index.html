@@ -1,13 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Inbox Debt</title>
-</head>
-<body>
-    <h1>Inbox Debt</h1>
+{% extends "base.html" %}
+{% block title %}Inbox Debt — Accueil{% endblock %}
 
-    <form action="/analyze" method="post">
-        <button type="submit">Analyser ma boîte Gmail</button>
-    </form>
-</body>
-</html>
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <h1 class="h4 mb-2">Nettoie ta boîte Gmail</h1>
+          <p class="text-muted mb-4">
+            Analyse les newsletters / promos, désabonne-toi et mets à la corbeille en quelques clics.
+          </p>
+
+          <form action="{{ url_for('analyze') }}" method="post" id="analyzeForm">
+            <button type="submit" class="btn btn-primary btn-app">
+              Analyser ma boîte Gmail
+            </button>
+          </form>
+
+          <div id="loading" class="mt-4 d-none">
+            <div class="d-flex align-items-center gap-3">
+              <div class="spinner-border" role="status" aria-hidden="true"></div>
+              <div>
+                <div class="fw-semibold">Analyse en cours…</div>
+                <div class="text-muted small">Ça peut prendre quelques secondes.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById("analyzeForm");
+  const loading = document.getElementById("loading");
+  form.addEventListener("submit", () => {
+    loading.classList.remove("d-none");
+  });
+</script>
+{% endblock %}

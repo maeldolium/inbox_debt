@@ -1,33 +1,60 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Résultats</title>
-</head>
-<body>
-    <h1>Résultats</h1>
+{% extends "base.html" %}
+{% block title %}Inbox Debt — Résultats{% endblock %}
 
-    <form action="/delete" method="post">
-    <table border="1">
-        <tr>
-            <th>Domaine</th>
-            <th>Nombre</th>
-            <th>Action</th>
-        </tr>
+{% block content %}
+ <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-2">Résultats de la recherche</h1>
+                <p class="text-muted mb-4">Voici les mails correspondant à la recherche. Vous pouvez choisir quels mails supprimer et lesquels placer dans la safelist.</p>
+                
+                <form action="{{ url_for('delete') }}" method="post" id="deleteForm">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Domaine</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
 
-        {% for domain, info in data.items() %}
-        <tr>
-            <td>{{ domain }}</td>
-            <td>{{ info.count }}</td>
-            <td>
-                <button name="domain" value="{{ domain }}">
-                    Supprimer
-                </button>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-</form>
+                        <tbody>
+                            {% for domain, info in data.items() %}
+                            <tr>
+                                <th scope="row">{{ domain }}</th>
+                                <td>{{ info.count }}</td>
+                                <td>
+                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" data-count="{{ info.count }}" class="delete-btn btn btn-delete btn-app">
+                                        Supprimer
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </form>
 
-    <a href="/">Retour</a>
-</body>
-</html>
+                    <a href="/" class="btn btn-primary btn-app">Retour</a>
+
+            </div>
+        </div>
+    </div>
+ </div>
+ {% endblock %}
+
+ {% block scripts %}
+ <script>
+        document.querySelectorAll(".delete-btn").forEach((btn) => {
+            btn.addEventListener("click", (event) => {
+                const domain = btn.dataset.domain;
+                const count = btn.dataset.count;
+
+                const ok = window.confirm(`Supprimer ${count} mails de ${domain} ?`);
+                if (!ok) {
+                    event.preventDefault();
+                };
+            });
+        });
+</script>
+{% endblock %}
