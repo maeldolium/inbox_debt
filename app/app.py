@@ -30,17 +30,31 @@ def analyze():
 def delete():
 
     domain = request.form.get("domain")
+    message = None
+    message_type = None
 
-    credentials = auth()
-    service = get_gmail_service(credentials)
+    try:
+        credentials = auth()
+        service = get_gmail_service(credentials)
 
-    results = list_unsubscribe_emails(service)
+        results = list_unsubscribe_emails(service)
 
-    message_ids = results[domain]["message_ids"]
+        message_ids = results[domain]["message_ids"]
+        count = len(message_ids)
 
-    delete_emails(service, message_ids)
+        delete_emails(service, message_ids)
 
-    return render_template("index.html")
+        results = list_unsubscribe_emails(service)
+        
+        message = f"✓ {count} mails de {domain} ont été supprimés avec succès"
+        message_type = "success"
+
+    except Exception as e:
+        message = f"✗ Erreur lors de la suppression : {str(e)}"
+        message_type = "error"
+        results = list_unsubscribe_emails(service)
+
+    return render_template("results.html", data=results, message=message, message_type=message_type)
 
 
 if __name__ == "__main__":

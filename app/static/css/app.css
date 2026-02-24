@@ -1,0 +1,34 @@
+/* Style boutons */
+.btn-app {
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
+
+/* Style bouton principal */
+.btn-primary {
+  background-color: var(--app-brand);
+  border-color: var(--app-brand);
+}
+.btn-primary:hover {
+  background-color: transparent;
+  border-color: var(--app-brand-600);
+  color: var(--app-brand-600);
+}
+
+/* Bouton de suppression */
+.btn-delete {
+    background-color: var(--app-delete);
+    border-color: var(--app-delete);
+    color: var(--app-font-white);
+}
+.btn-delete:hover {
+    background-color: transparent;
+    border-color: var(--app-delete);
+    color: var(--app-delete);
+}
+
+/* Cards */
+.card {
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
