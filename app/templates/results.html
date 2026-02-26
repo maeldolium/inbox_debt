@@ -32,13 +32,13 @@
                         <tbody>
                             {% for domain, info in data.items() %}
                             <tr>
-                                <th scope="row">{{ domain }}</th>
-                                <td>{{ info.count }}</td>
-                                <td class="d-flex justify-content-evenly">
+                                <th scope="row" class="align-middle">{{ domain }}</th>
+                                <td class="align-middle">{{ info.count }}</td>
+                                <td class="align-middle d-flex justify-content-evenly">
                                     <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" data-count="{{ info.count }}" formaction="{{ url_for('delete') }}" class="btn btn-delete btn-app">
                                         Supprimer
                                     </button>
-                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" formaction="{{ url_for('safelist') }}" class="btn btn-safelist btn-app">
+                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" formaction="{{ url_for('add_safelist') }}" class="btn btn-safelist btn-app">
                                         Safelist
                                     </button>
                                 </td>

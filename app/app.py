@@ -32,7 +32,7 @@ def index():
     return render_template("index.html")
 
 # Analyse de la boîte mail
-@app.route("/analyze", methods=["POST"])
+@app.route("/analyze", methods=["GET", "POST"])
 def analyze():
     global LAST_ANALYSIS, LAST_QUERY, LAST_UPDATED_AT
     analysis, _ = get_sorted_results()
@@ -72,13 +72,18 @@ def delete():
     except Exception as e:
         message = f"✗ Erreur lors de la suppression : {str(e)}"
         message_type = "error"
-        sorted_results = LAST_ANALYSIS, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT
+        sorted_results = LAST_ANALYSIS
 
-    return render_template("results.html", data=sorted_results, message=message, message_type=message_type)
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
 
 # Ajout à la safelist
+@app.route("/safelist", methods=["GET"])
+def view_safelist():
+    safelist_domains = load_safelist()
+    return render_template("safelist.html", safelist_domains=safelist_domains)
+
 @app.route("/safelist", methods=["POST"])
-def safelist():
+def add_safelist():
     global LAST_ANALYSIS
     
     domain = request.form.get("domain")
@@ -102,6 +107,32 @@ def safelist():
         sorted_results = LAST_ANALYSIS
 
     return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
+
+@app.route("/remove-from-safelist", methods=["POST"])
+def remove_from_safelist():
+    domain = request.form.get("domain")
+    message = None
+    message_type = None
+
+    try:
+        safelist = load_safelist()
+        domain = domain.lower().strip()
+        
+        if domain in safelist:
+            safelist.remove(domain)
+            save_safelist(safelist)
+            message = f"✓ {domain} supprimé de la safelist !"
+            message_type = "success"
+        else:
+            message = f"✗ {domain} n'est pas dans la safelist"
+            message_type = "error"
+
+    except Exception as e:
+        message = f"✗ Erreur lors de la suppression : {str(e)}"
+        message_type = "error"
+
+    safelist_domains = load_safelist()
+    return render_template("safelist.html", safelist_domains=safelist_domains, message=message, message_type=message_type)
 
 
 if __name__ == "__main__":

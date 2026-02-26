@@ -1,6 +1,6 @@
 :root {
   /* Brand */
-  --app-brand: #4f46e5;        /* ta couleur principale */
+  --app-brand: #4f46e5;
   --app-brand-600: #4338ca;
   --app-bg: #f6f7fb;
 
@@ -14,6 +14,10 @@
   /* Font color */
   --app-font-white: #fff;
   --app-font-black: #000;
+
+  /* Buttons */
+  --app-btn-vertical-pad: 0.3rem;
+  --app-btn-horizontal-pad: 0.75rem;
 
   /* Delete and errors */
   --app-delete: #cd2323;

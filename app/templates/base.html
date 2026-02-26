@@ -18,11 +18,26 @@
 <body class="bg-app d-flex flex-column min-vh-100">
   <header class="border-bottom bg-white">
     <div class="container py-3 d-flex align-items-center justify-content-between">
-      <a href="{{ url_for('index') }}" class="text-decoration-none d-flex align-items-center gap-2">
-        <span class="app-mark"></span>
-        <span class="fw-semibold text-dark">Inbox Debt</span>
-      </a>
+      
 
+      <nav class="container navbar navbar-expand-lg w-full">
+
+            <a href="{{ url_for('index') }}" class="navbar-brand text-decoration-none d-flex align-items-center gap-2">
+              <span class="app-mark"></span>
+              <span class="fw-semibold text-dark">Inbox Debt</span>
+            </a>
+            
+            <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+              <ul class="navbar-nav mr-auto align-items-center text-black">
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('analyze') }}">Analyse</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('view_safelist')}}">Safelist</a>
+                </li>
+              </ul>
+            </div>
+    </nav>
       {% block header_actions %}{% endblock %}
     </div>
   </header>
