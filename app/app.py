@@ -1,10 +1,15 @@
 from flask import Flask, render_template, request
 from auth.oauth_flow import auth
-from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails
+from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails, SEARCH_QUERY
 from gmail_api.actions import delete_emails
 from ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
 from config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
 import webbrowser
+from datetime import datetime
+
+LAST_ANALYSIS = None
+LAST_QUERY = None
+LAST_UPDATED_AT = None
 
 app = Flask(__name__)
 
@@ -29,12 +34,18 @@ def index():
 # Analyse de la boîte mail
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    sorted_results, _ = get_sorted_results()
-    return render_template("results.html", data=sorted_results)
+    global LAST_ANALYSIS, LAST_QUERY, LAST_UPDATED_AT
+    analysis, _ = get_sorted_results()
+    LAST_ANALYSIS = analysis
+    LAST_QUERY = SEARCH_QUERY
+    LAST_UPDATED_AT = datetime.now()
+    return render_template("results.html", data=analysis, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
 
 # Suppression des mails
 @app.route("/delete", methods=["POST"])
 def delete():
+    global LAST_ANALYSIS
+    
     domain = request.form.get("domain")
     message = None
     message_type = None
@@ -51,18 +62,25 @@ def delete():
 
         message = f"✓ {count} mails de {domain} ont été supprimés avec succès"
         message_type = "success"
+        
+        # Supprimer le domaine de LAST_ANALYSIS
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+        
+        sorted_results = LAST_ANALYSIS
 
     except Exception as e:
         message = f"✗ Erreur lors de la suppression : {str(e)}"
         message_type = "error"
+        sorted_results = LAST_ANALYSIS, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT
 
-    # Mise à jour de la liste de mails
-    sorted_results, _ = get_sorted_results()
     return render_template("results.html", data=sorted_results, message=message, message_type=message_type)
 
 # Ajout à la safelist
 @app.route("/safelist", methods=["POST"])
 def safelist():
+    global LAST_ANALYSIS
+    
     domain = request.form.get("domain")
     message = None
     message_type = None
@@ -71,14 +89,19 @@ def safelist():
         add_domain_to_safelist(domain)
         message = f"✓ {domain} ajouté à la safelist !"
         message_type = "success"
+        
+        # Supprimer le domaine de LAST_ANALYSIS
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+        
+        sorted_results = LAST_ANALYSIS
 
     except Exception as e:
         message = f"✗ Erreur lors de l'ajout à la safelist : {str(e)}"
         message_type = "error"
+        sorted_results = LAST_ANALYSIS
 
-    # Mise à jour de la liste de mails
-    sorted_results, _ = get_sorted_results()
-    return render_template("results.html", data=sorted_results, message=message, message_type=message_type)
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
 
 
 if __name__ == "__main__":

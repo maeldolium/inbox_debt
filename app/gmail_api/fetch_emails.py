@@ -3,6 +3,9 @@ from googleapiclient.errors import HttpError
 from gmail_api.parsers import extract_domain, extract_http_unsubscribe
 import time
 
+# Requête de recherche utilisée pour les mails
+SEARCH_QUERY = "category:promotions OR unsubscribe OR \"désinscrire\""
+
 def get_gmail_service(credentials):
     # Créer le service pour la récupération de mails
     service = build("gmail", "v1", credentials=credentials)
@@ -22,7 +25,7 @@ def list_unsubscribe_emails(service):
     while True:
         result = service.users().messages().list(
             userId="me",
-            q="category:promotions OR unsubscribe OR \"désinscrire\"",
+            q=SEARCH_QUERY,
             maxResults=100,
             pageToken=page_token
         ).execute()

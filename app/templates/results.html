@@ -7,6 +7,9 @@
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
                 <h1 class="h4 mb-2">Résultats de la recherche</h1>
+                {% if last_updated_at %}
+                <p class="text-muted small mb-4">Analyse effectuée à {{ last_updated_at.strftime('%H:%M') }} — Recherche: <code>{{ last_query }}</code></p>
+                {% endif %}
                 <p class="text-muted mb-4">Voici les mails correspondant à la recherche. Vous pouvez choisir quels mails supprimer et lesquels placer dans la safelist.</p>
                 
                 <form action="" method="post" id="deleteForm">
