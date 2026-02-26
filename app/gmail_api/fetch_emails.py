@@ -80,7 +80,9 @@ def list_unsubscribe_emails(service):
             dict_senders[domain]["subjects"].append(subject)
 
         if unsubscribe:
-            dict_senders[domain]["unsubscribe_links"].append(unsubscribe)
+            http_links = extract_http_unsubscribe(unsubscribe)
+            if http_links:
+                dict_senders[domain]["unsubscribe_links"].append(http_links[0])
 
 
     # Traiter les messages par batch de 10 pour éviter le rate limit

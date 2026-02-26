@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Inbox Debt — {{ domain }}{% endblock %}
+
+{% block content %}
+ <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-4">{{ domain }}</h1>
+                
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                    <a href="{{ request.referrer or url_for('index') }}" class="btn btn-primary btn-app">Retour</a>
+                {% else %}
+                    <!-- Statistiques -->
+                    <div class="mb-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <div class="text-muted small">Total de mails</div>
+                                        <div class="h5 mb-0">{{ total_count }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <div class="text-muted small">Avec lien de désabonnement</div>
+                                        <div class="h5 mb-0">{{ unsubscribe_count }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exemples de sujets -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Exemples de sujets</h5>
+                        <ul class="list-group">
+                            {% for subject in domain_data.subjects[:5] %}
+                            <li class="list-group-item text-muted small">{{ subject }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <form action="{{ url_for('delete_domain_all', domain=domain) }}" method="post">
+                            <button type="submit" class="btn btn-delete btn-app w-100">Tout supprimer</button>
+                        </form>
+                        <form action="{{ url_for('delete_domain_with_link', domain=domain) }}" method="post">
+                            <button type="submit" class="btn btn-warning btn-app w-100">Supprimer si contient lien</button>
+                        </form>
+                        {% if unsubscribe_count > 0 %}
+                        
+                            <button class="btn btn-info btn-app" id="openUnsubscribeBtn">Ouvrir lien de désabonnement</button>
+                        
+                        {% endif %}
+                    </div>
+
+                    <a href="{{ request.referrer or url_for('index') }}" class="btn btn-primary btn-app">Retour</a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+ </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const openBtn = document.getElementById('openUnsubscribeBtn');
+    if (openBtn) {
+        openBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('{{ url_for("open_unsubscribe_link", domain=domain) }}', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.link) {
+                    window.open(data.link, '_blank');
+                } else {
+                    alert('Erreur: ' + (data.error || 'Lien non trouvé'));
+                }
+            } catch (error) {
+                alert('Erreur lors de l\'ouverture du lien: ' + error);
+            }
+        });
+    }
+</script>
+{% endblock %}

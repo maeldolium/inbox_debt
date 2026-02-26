@@ -32,7 +32,7 @@
                         <tbody>
                             {% for domain, info in data.items() %}
                             <tr>
-                                <th scope="row" class="align-middle">{{ domain }}</th>
+                                <th scope="row" class="align-middle"><a href="{{ url_for('view_domain', domain=domain) }}" class="text-decoration-none text-black">{{ domain }}</a></th>
                                 <td class="align-middle">{{ info.count }}</td>
                                 <td class="align-middle d-flex justify-content-evenly">
                                     <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" data-count="{{ info.count }}" formaction="{{ url_for('delete') }}" class="btn btn-delete btn-app">
