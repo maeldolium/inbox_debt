@@ -20,11 +20,45 @@
     background-color: var(--app-delete);
     border-color: var(--app-delete);
     color: var(--app-font-white);
+    border-radius: var(--app-radius);
 }
 .btn-delete:hover {
     background-color: transparent;
     border-color: var(--app-delete);
     color: var(--app-delete);
+}
+
+/* Bouton safelist */
+.btn-safelist {
+  color: var(--app-font-white);
+  border-radius: var(--app-radius);
+  background-color: var(--app-safelist-bg);
+  border-color: var(--app-safelist-border);
+  color: var(--app-safelist-font);
+}
+
+/* Search input */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--app-font-grey, #6c757d);
+  pointer-events: none;
+}
+
+.search-input {
+  border-radius: var(--app-radius);
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  width: 100%;
+  border: 1px solid #ced4da;
 }
 
 /* Cards */

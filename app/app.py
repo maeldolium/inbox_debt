@@ -8,27 +8,33 @@ import webbrowser
 
 app = Flask(__name__)
 
+# Obtenir la liste de mail trier dans l'ordre décroissant
+# du nombre de mails par domaine
+def get_sorted_results():
+    credentials = auth()
+    service = get_gmail_service(credentials)
+    results = list_unsubscribe_emails(service)
+    
+    # Charger et appliquer le filtre de safelist
+    safelist = load_safelist()
+    filtered_results = filter_safelist(results, safelist)
+    
+    return dict(sorted(filtered_results.items(), key=lambda x: x[1]['count'], reverse=True)), service
+
+# Affichage de l'accueil
 @app.route("/")
 def index():
     return render_template("index.html")
 
+# Analyse de la boîte mail
 @app.route("/analyze", methods=["POST"])
 def analyze():
+    sorted_results, _ = get_sorted_results()
+    return render_template("results.html", data=sorted_results)
 
-    # Connexion avec OAuth2
-    credentials = auth()
-
-    # Service pour la récupération des mails
-    service = get_gmail_service(credentials)
-
-    # Récupération des mails
-    results = list_unsubscribe_emails(service)
-
-    return render_template("results.html", data=results)
-
+# Suppression des mails
 @app.route("/delete", methods=["POST"])
 def delete():
-
     domain = request.form.get("domain")
     message = None
     message_type = None
@@ -36,7 +42,6 @@ def delete():
     try:
         credentials = auth()
         service = get_gmail_service(credentials)
-
         results = list_unsubscribe_emails(service)
 
         message_ids = results[domain]["message_ids"]
@@ -44,17 +49,36 @@ def delete():
 
         delete_emails(service, message_ids)
 
-        results = list_unsubscribe_emails(service)
-        
         message = f"✓ {count} mails de {domain} ont été supprimés avec succès"
         message_type = "success"
 
     except Exception as e:
         message = f"✗ Erreur lors de la suppression : {str(e)}"
         message_type = "error"
-        results = list_unsubscribe_emails(service)
 
-    return render_template("results.html", data=results, message=message, message_type=message_type)
+    # Mise à jour de la liste de mails
+    sorted_results, _ = get_sorted_results()
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type)
+
+# Ajout à la safelist
+@app.route("/safelist", methods=["POST"])
+def safelist():
+    domain = request.form.get("domain")
+    message = None
+    message_type = None
+
+    try:
+        add_domain_to_safelist(domain)
+        message = f"✓ {domain} ajouté à la safelist !"
+        message_type = "success"
+
+    except Exception as e:
+        message = f"✗ Erreur lors de l'ajout à la safelist : {str(e)}"
+        message_type = "error"
+
+    # Mise à jour de la liste de mails
+    sorted_results, _ = get_sorted_results()
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type)
 
 
 if __name__ == "__main__":

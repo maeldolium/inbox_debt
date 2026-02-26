@@ -15,7 +15,7 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="bg-app">
+<body class="bg-app d-flex flex-column min-vh-100">
   <header class="border-bottom bg-white">
     <div class="container py-3 d-flex align-items-center justify-content-between">
       <a href="{{ url_for('index') }}" class="text-decoration-none d-flex align-items-center gap-2">
@@ -27,7 +27,7 @@
     </div>
   </header>
 
-  <main class="container py-4">
+  <main class="container py-4 flex-fill align-content-center">
     {% if message %}
       <div class="alert {{ 'alert-success' if message_type == 'success' else 'alert-danger' }} shadow-sm" role="alert">
         {{ message }}

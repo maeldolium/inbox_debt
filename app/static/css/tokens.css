@@ -17,6 +17,11 @@
 
   /* Delete and errors */
   --app-delete: #cd2323;
+
+  /* Safelist and success */
+  --app-safelist-bg: #d1e7dd;
+  --app-safelist-border: #a3cfbb;
+  --app-safelist-font: #0a3622;
 }
 
 body {

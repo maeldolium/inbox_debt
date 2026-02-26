@@ -9,7 +9,14 @@
                 <h1 class="h4 mb-2">Résultats de la recherche</h1>
                 <p class="text-muted mb-4">Voici les mails correspondant à la recherche. Vous pouvez choisir quels mails supprimer et lesquels placer dans la safelist.</p>
                 
-                <form action="{{ url_for('delete') }}" method="post" id="deleteForm">
+                <form action="" method="post" id="deleteForm">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" id="domainFilter" class="search-input" placeholder="Rechercher">
+                    </div>
                     <table class="table table-hover">
                         <thead>
                             <tr>
@@ -24,9 +31,12 @@
                             <tr>
                                 <th scope="row">{{ domain }}</th>
                                 <td>{{ info.count }}</td>
-                                <td>
-                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" data-count="{{ info.count }}" class="delete-btn btn btn-delete btn-app">
+                                <td class="d-flex justify-content-evenly">
+                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" data-count="{{ info.count }}" formaction="{{ url_for('delete') }}" class="btn btn-delete btn-app">
                                         Supprimer
+                                    </button>
+                                    <button type="submit" name="domain" value="{{ domain }}" data-domain="{{ domain }}" formaction="{{ url_for('safelist') }}" class="btn btn-safelist btn-app">
+                                        Safelist
                                     </button>
                                 </td>
                             </tr>
@@ -45,16 +55,62 @@
 
  {% block scripts %}
  <script>
-        document.querySelectorAll(".delete-btn").forEach((btn) => {
-            btn.addEventListener("click", (event) => {
-                const domain = btn.dataset.domain;
-                const count = btn.dataset.count;
+    // Filtre des domaines
+    const domainFilter = document.getElementById("domainFilter");
+    const tbody = document.querySelector("tbody");
+    const rows = tbody.querySelectorAll("tr");
 
-                const ok = window.confirm(`Supprimer ${count} mails de ${domain} ?`);
-                if (!ok) {
-                    event.preventDefault();
-                };
-            });
+    domainFilter.addEventListener("input", (event) => {
+        const filterValue = event.target.value.toLowerCase();
+        
+        rows.forEach((row) => {
+            const firstCell = row.querySelector("th");
+            const domainText = firstCell.textContent.trim().toLowerCase();
+            
+            if (domainText.includes(filterValue)) {
+                row.classList.remove("d-none");
+            } else {
+                row.classList.add("d-none");
+            }
         });
+    });
+
+    // Récupère tous les boutons
+    const deleteButtons = document.querySelectorAll(".btn-delete");
+    const safelistButtons = document.querySelectorAll(".btn-safelist");
+    const allButtons = document.querySelectorAll(".btn-delete, .btn-safelist");
+
+    // Fonction générique pour gérer la désactivation des boutons
+    function handleButtonAction(btn, confirmMessage, loadingText) {
+        const ok = window.confirm(confirmMessage);
+        if (!ok) {
+            event.preventDefault();
+            return;
+        }
+
+        // Désactive tous les boutons
+        allButtons.forEach((b) => {
+            if(b !== btn) {
+                b.disabled = true;
+            }
+        });
+    }
+
+    // Gestion des clics sur les boutons de suppression
+    deleteButtons.forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+            const domain = btn.dataset.domain;
+            const count = btn.dataset.count;
+            handleButtonAction(btn, `Supprimer ${count} mails de ${domain} ?`, " Suppression…");
+        });
+    });
+
+    // Gestion des clics sur les boutons safelist
+    safelistButtons.forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+            const domain = btn.dataset.domain;
+            handleButtonAction(btn, `Ajouter ${domain} à la safelist ?`, " Ajout…");
+        });
+    });
 </script>
 {% endblock %}
