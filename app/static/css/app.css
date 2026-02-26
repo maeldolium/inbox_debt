@@ -1,4 +1,8 @@
 /* Style boutons */
+.btn {
+  padding: var(--app-btn-vertical-pad) var(--app-btn-horizontal-pad);
+}
+
 .btn-app {
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
@@ -65,4 +69,11 @@
 .card {
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
+}
+
+/* Bouton navbar */
+button.nav-item {
+  border: none;
+  background: transparent;
+  text-align: center;
 }
