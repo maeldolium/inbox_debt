@@ -20,16 +20,16 @@ def extract_domain(from_value):
 def extract_http_unsubscribe(unsubscribe_header):
     
     if not unsubscribe_header:
-        return None
+        return []
 
     links = unsubscribe_header.split(',')
+    http_links = []
 
-    for i in range(len(links)):
-        links[i] = links[i].strip().lstrip('<').rstrip('>')
+    for link in links:
+        link = link.strip().lstrip('<').rstrip('>')
+        if link and link.startswith("http"):
+            http_links.append(link)
 
-        if links[i].startswith("http"):
-            return links[i]
-
-    return None
+    return http_links
 
 

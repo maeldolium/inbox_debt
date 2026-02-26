@@ -41,6 +41,28 @@
   color: var(--app-safelist-font);
 }
 
+/* Bouton warning */
+.btn-warning {
+  background-color: var(--app-btn-warning);
+  border: var(--app-btn-warning);
+  color: var(--app-font-white);
+}
+.btn-warning:hover {
+  background-color: transparent;
+  color: var(--app-btn-warning);
+}
+
+/* Bouton info */
+.btn-info {
+  background-color: var(--app-btn-info);
+  border: var(--app-btn-info);
+  color: var(--app-font-white);
+}
+.btn-info:hover {
+  background-color: transparent;
+  color: var(--app-btn-info);
+}
+
 /* Search input */
 .search-wrapper {
   position: relative;

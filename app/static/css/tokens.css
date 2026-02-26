@@ -19,6 +19,9 @@
   --app-btn-vertical-pad: 0.3rem;
   --app-btn-horizontal-pad: 0.75rem;
 
+  --app-btn-info: #4d4d4d;
+  --app-btn-warning: #e66f08;
+
   /* Delete and errors */
   --app-delete: #cd2323;
 
