@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from auth.oauth_flow import auth
 from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails, SEARCH_QUERY
 from gmail_api.actions import delete_emails
@@ -12,6 +12,7 @@ LAST_QUERY = None
 LAST_UPDATED_AT = None
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-change-me'  # À changer en production
 
 # Obtenir la liste de mail trier dans l'ordre décroissant
 # du nombre de mails par domaine
@@ -61,7 +62,12 @@ def analyze():
     LAST_ANALYSIS = analysis
     LAST_QUERY = SEARCH_QUERY
     LAST_UPDATED_AT = datetime.now()
-    return render_template("results.html", data=analysis, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
+    
+    # Récupérer les messages de la session s'ils existent
+    message = session.pop('message', None)
+    message_type = session.pop('message_type', None)
+    
+    return render_template("results.html", data=analysis, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
 
 # Suppression des mails
 @app.route("/delete", methods=["POST"])
@@ -189,18 +195,10 @@ def delete_domain_all(domain):
         message = f"✗ Erreur lors de la suppression : {str(e)}"
         message_type = "error"
 
-    domain_data = LAST_ANALYSIS.get(domain) if LAST_ANALYSIS else None
-    unsubscribe_count = sum(1 for link in domain_data.get('unsubscribe_links', []) if link) if domain_data else 0
-    
-    return render_template(
-        "domain.html",
-        domain=domain,
-        domain_data=domain_data,
-        total_count=domain_data.get('count', 0) if domain_data else 0,
-        unsubscribe_count=unsubscribe_count,
-        message=message,
-        message_type=message_type
-    )
+    # Stocker les messages dans la session et rediriger
+    session['message'] = message
+    session['message_type'] = message_type
+    return redirect(url_for('analyze'))
 
 @app.route("/domain/<domain>/delete-with-link", methods=["POST"])
 def delete_domain_with_link(domain):
@@ -235,33 +233,43 @@ def delete_domain_with_link(domain):
                 message = f"✓ {count} mails de {domain} avec lien ont été supprimés"
                 message_type = "success"
 
-                # Mettre à jour LAST_ANALYSIS
-                if LAST_ANALYSIS and domain in LAST_ANALYSIS:
-                    LAST_ANALYSIS[domain]["message_ids"] = [
-                        mid for i, mid in enumerate(domain_data["message_ids"])
-                        if not domain_data["unsubscribe_links"][i]
-                    ]
-                    LAST_ANALYSIS[domain]["unsubscribe_links"] = [
-                        link for link in domain_data["unsubscribe_links"] if not link
-                    ]
-                    LAST_ANALYSIS[domain]["count"] -= count
+                # Récupérer les données fraîches après suppression
+                fresh_results = list_unsubscribe_emails(service)
+                
+                # Mettre à jour LAST_ANALYSIS avec les données fraîches
+                if fresh_results and domain in fresh_results:
+                    LAST_ANALYSIS[domain] = fresh_results[domain]
+                elif LAST_ANALYSIS and domain in LAST_ANALYSIS:
+                    # Si le domaine n'existe plus, le supprimer
+                    del LAST_ANALYSIS[domain]
 
     except Exception as e:
         message = f"✗ Erreur lors de la suppression : {str(e)}"
         message_type = "error"
 
+    # Vérifier si le domaine n'a plus de mails
     domain_data = LAST_ANALYSIS.get(domain) if LAST_ANALYSIS else None
-    unsubscribe_count = sum(1 for link in domain_data.get('unsubscribe_links', []) if link) if domain_data else 0
     
-    return render_template(
-        "domain.html",
-        domain=domain,
-        domain_data=domain_data,
-        total_count=domain_data.get('count', 0) if domain_data else 0,
-        unsubscribe_count=unsubscribe_count,
-        message=message,
-        message_type=message_type
-    )
+    # Si le domaine n'existe plus ou n'a plus de mails, rediriger vers la liste
+    if not domain_data or domain_data.get('count', 0) <= 0:
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+        # Stocker les messages dans la session et rediriger
+        session['message'] = message
+        session['message_type'] = message_type
+        return redirect(url_for('analyze'))
+    else:
+        # Sinon, rester sur la page du domaine avec les infos à jour
+        unsubscribe_count = sum(1 for link in domain_data.get('unsubscribe_links', []) if link) if domain_data else 0
+        return render_template(
+            "domain.html",
+            domain=domain,
+            domain_data=domain_data,
+            total_count=domain_data.get('count', 0) if domain_data else 0,
+            unsubscribe_count=unsubscribe_count,
+            message=message,
+            message_type=message_type
+        )
 
 @app.route("/domain/<domain>/open-unsubscribe", methods=["POST"])
 def open_unsubscribe_link(domain):
