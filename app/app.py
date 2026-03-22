@@ -5,6 +5,7 @@ from gmail_api.actions import delete_emails
 from ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
 from config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
 from config.settings import APP_MODE
+from config.config import get_config, validate_config
 import webbrowser
 from datetime import datetime
 import json
@@ -15,37 +16,37 @@ LAST_QUERY = None
 LAST_UPDATED_AT = None
 
 app = Flask(__name__)
-app.secret_key = 'secret-key'
 
-# ============================================================================
-# Charger les données de démonstration depuis mock_analysis.json
-# ============================================================================
+# Valider et charger la configuration
+config = validate_config()
+app.config.from_object(config)
+
+# Définir la secret_key de manière sécurisée
+app.secret_key = config.SECRET_KEY
+
+print(f"\n{'='*70}")
+print(f"Application initialisée")
+print(f"   Mode : {config.APP_MODE.upper()}")
+print(f"   Environnement : {config.FLASK_ENV}")
+print(f"   Debug : {app.debug}")
+print(f"{'='*70}\n")
+
+# Charger les données de démonstration
 def load_mock_data():
-    """
-    Charge les données fictives depuis app/mock/mock_analysis.json
-    Utilisé en mode démo pour éviter d'appeler l'API Gmail.
-    """
     mock_file = os.path.join(os.path.dirname(__file__), 'mock', 'mock_analysis.json')
     
     try:
         with open(mock_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"⚠️ Fichier {mock_file} non trouvé!")
+        print(f"Fichier {mock_file} non trouvé!")
         return {}
     except json.JSONDecodeError as e:
-        print(f"⚠️ Erreur de parsing JSON: {e}")
+        print(f"Erreur de parsing JSON: {e}")
         return {}
 
-# ============================================================================
 # Trie des mails par ordre croissant
-# ============================================================================
 def get_sorted_results():
-    """
-    Récupère et trie les résultats des emails non-abonnements.
-    En mode DEMO : charge depuis app/mock/mock_analysis.json
-    En mode LOCAL : accède à l'API Gmail réelle
-    """
  
     # En mode démo, charger les données fictives depuis le JSON
     if APP_MODE == "demo":
@@ -120,7 +121,7 @@ def delete():
     if APP_MODE == "demo":
         # Compter les mails du domaine
         domain_count = LAST_ANALYSIS.get(domain, {}).get('count', 0) if LAST_ANALYSIS else 0
-        message = f"⚠️ [{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
+        message = f"[{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
         message_type = "info"
         
         # Supprimer le domaine de LAST_ANALYSIS (simulation)
@@ -171,7 +172,7 @@ def add_safelist():
     message = None
     message_type = None
 
-    # En mode démo, simulation sans vraie modification
+    # En mode démo, simulation de modification de la safelist
     if APP_MODE == "demo":
         message = f"✓ [{APP_MODE.upper()}] {domain} simulé en safelist"
         message_type = "success"
@@ -183,7 +184,7 @@ def add_safelist():
         sorted_results = LAST_ANALYSIS
         return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
 
-    # Mode local : vraie modification
+    # Mode local : modification de la safelist
     try:
         add_domain_to_safelist(domain)
         message = f"✓ {domain} ajouté à la safelist !"
@@ -208,12 +209,12 @@ def remove_from_safelist():
     message = None
     message_type = None
 
-    # En mode démo, simulation sans vraie modification
+    # En mode démo, simulation de modification de la safelist
     if APP_MODE == "demo":
         message = f"✓ [{APP_MODE.upper()}] {domain} retiré de la safelist simulée"
         message_type = "success"
     else:
-        # Mode local : vraie modification
+        # Mode local : modification de la safelist
         try:
             safelist = load_safelist()
             domain = domain.lower().strip()
@@ -246,7 +247,7 @@ def delete_domain_all(domain):
     if APP_MODE == "demo":
         # Compter les mails du domaine
         domain_count = LAST_ANALYSIS.get(domain, {}).get('count', 0) if LAST_ANALYSIS else 0
-        message = f"⚠️ [{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
+        message = f"[{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
         message_type = "info"
         
         # Supprimer le domaine de LAST_ANALYSIS (simulation)
@@ -300,7 +301,7 @@ def delete_domain_with_link(domain):
             count = len(links_with_url)
             
             if count > 0:
-                message = f"⚠️ [{APP_MODE.upper()}] {count} mail(s) avec lien simulé(s) supprimé(s) de {domain}"
+                message = f"[{APP_MODE.upper()}] {count} mail(s) avec lien simulé(s) supprimé(s) de {domain}"
                 message_type = "info"
                 del LAST_ANALYSIS[domain]
             else:
@@ -399,7 +400,4 @@ def open_unsubscribe_link(domain):
 
 
 if __name__ == "__main__":
-    print(f"\n{'='*60}")
-    print(f"Application en mode : {APP_MODE.upper()}")
-    print(f"{'='*60}\n")
-    app.run(debug=True)
+    app.run(debug=app.debug)
