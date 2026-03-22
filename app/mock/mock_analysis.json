@@ -1,0 +1,98 @@
+{
+  "linkedin.com": {
+    "count": 34,
+    "subjects": [
+      "Job recommendation for you",
+      "Your profile was viewed",
+      "New connection request"
+    ],
+    "unsubscribe_links": [
+      "https://linkedin.com/e/unsubscribe",
+      "https://linkedin.com/e/unsubscribe",
+      null,
+      "https://linkedin.com/e/unsubscribe"
+    ],
+    "message_ids": [
+      "mock_linkedin_001",
+      "mock_linkedin_002",
+      "mock_linkedin_003",
+      "mock_linkedin_004"
+    ]
+  },
+  "amazon.com": {
+    "count": 28,
+    "subjects": [
+      "Your order is on the way",
+      "Order confirmation #12345",
+      "Special deal - Items you viewed"
+    ],
+    "unsubscribe_links": [
+      "https://amazon.com/manage-preferences",
+      "https://amazon.com/manage-preferences",
+      "https://amazon.com/manage-preferences",
+      "https://amazon.com/manage-preferences"
+    ],
+    "message_ids": [
+      "mock_amazon_001",
+      "mock_amazon_002",
+      "mock_amazon_003",
+      "mock_amazon_004"
+    ]
+  },
+  "newsletter.substack.com": {
+    "count": 19,
+    "subjects": [
+      "Weekly digest - March 22",
+      "This week in tech",
+      "Subscriber exclusive content"
+    ],
+    "unsubscribe_links": [
+      "https://substack.com/unsubscribe/abc123",
+      "https://substack.com/unsubscribe/abc123",
+      "https://substack.com/unsubscribe/abc123"
+    ],
+    "message_ids": [
+      "mock_substack_001",
+      "mock_substack_002",
+      "mock_substack_003"
+    ]
+  },
+  "promotions.store.com": {
+    "count": 42,
+    "subjects": [
+      "Spring Sale - 50% OFF",
+      "Flash deal - 24 hours only",
+      "Exclusive offer for you"
+    ],
+    "unsubscribe_links": [
+      null,
+      "https://store.com/preferences",
+      "https://store.com/preferences",
+      "https://store.com/preferences"
+    ],
+    "message_ids": [
+      "mock_promo_001",
+      "mock_promo_002",
+      "mock_promo_003",
+      "mock_promo_004"
+    ]
+  },
+  "notifications.github.com": {
+    "count": 15,
+    "subjects": [
+      "Repository notification",
+      "CI/CD pipeline failed",
+      "New comment on your issue"
+    ],
+    "unsubscribe_links": [
+      null,
+      null,
+      null
+    ],
+    "message_ids": [
+      "mock_github_001",
+      "mock_github_002",
+      "mock_github_003"
+    ]
+  }
+}

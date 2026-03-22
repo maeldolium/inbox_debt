@@ -4,19 +4,56 @@ from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails, S
 from gmail_api.actions import delete_emails
 from ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
 from config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
+from config.settings import APP_MODE
 import webbrowser
 from datetime import datetime
+import json
+import os
 
 LAST_ANALYSIS = None
 LAST_QUERY = None
 LAST_UPDATED_AT = None
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-me'  # À changer en production
+app.secret_key = 'secret-key'
 
-# Obtenir la liste de mail trier dans l'ordre décroissant
-# du nombre de mails par domaine
+# ============================================================================
+# Charger les données de démonstration depuis mock_analysis.json
+# ============================================================================
+def load_mock_data():
+    """
+    Charge les données fictives depuis app/mock/mock_analysis.json
+    Utilisé en mode démo pour éviter d'appeler l'API Gmail.
+    """
+    mock_file = os.path.join(os.path.dirname(__file__), 'mock', 'mock_analysis.json')
+    
+    try:
+        with open(mock_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Fichier {mock_file} non trouvé!")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"⚠️ Erreur de parsing JSON: {e}")
+        return {}
+
+# ============================================================================
+# Trie des mails par ordre croissant
+# ============================================================================
 def get_sorted_results():
+    """
+    Récupère et trie les résultats des emails non-abonnements.
+    En mode DEMO : charge depuis app/mock/mock_analysis.json
+    En mode LOCAL : accède à l'API Gmail réelle
+    """
+ 
+    # En mode démo, charger les données fictives depuis le JSON
+    if APP_MODE == "demo":
+        mock_data = load_mock_data()
+        results = dict(sorted(mock_data.items(), key=lambda x: x[1]['count'], reverse=True))
+        return results, None
+    
+    # En mode local, accéder à l'API Gmail réelle
     credentials = auth()
     service = get_gmail_service(credentials)
     results = list_unsubscribe_emails(service)
@@ -30,7 +67,7 @@ def get_sorted_results():
 # Affichage de l'accueil
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", app_mode=APP_MODE)
 
 # Affichage des détails d'un domaine
 @app.route("/domain/<domain>")
@@ -41,7 +78,7 @@ def view_domain(domain):
         domain_data = None
         
     if not domain_data:
-        return render_template("domain.html", domain=domain, error="Domaine non trouvé")
+        return render_template("domain.html", domain=domain, error="Domaine non trouvé", app_mode=APP_MODE)
     
     # Compter les mails avec lien de désabonnement
     unsubscribe_count = sum(1 for link in domain_data.get('unsubscribe_links', []) if link)
@@ -51,7 +88,8 @@ def view_domain(domain):
         domain=domain, 
         domain_data=domain_data,
         total_count=domain_data.get('count', 0),
-        unsubscribe_count=unsubscribe_count
+        unsubscribe_count=unsubscribe_count,
+        app_mode=APP_MODE
     )
 
 # Analyse de la boîte mail
@@ -60,14 +98,14 @@ def analyze():
     global LAST_ANALYSIS, LAST_QUERY, LAST_UPDATED_AT
     analysis, _ = get_sorted_results()
     LAST_ANALYSIS = analysis
-    LAST_QUERY = SEARCH_QUERY
+    LAST_QUERY = SEARCH_QUERY if APP_MODE == "local" else "DEMO_MODE (données fictives)"
     LAST_UPDATED_AT = datetime.now()
     
     # Récupérer les messages de la session s'ils existent
     message = session.pop('message', None)
     message_type = session.pop('message_type', None)
     
-    return render_template("results.html", data=analysis, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
+    return render_template("results.html", data=analysis, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
 
 # Suppression des mails
 @app.route("/delete", methods=["POST"])
@@ -78,6 +116,21 @@ def delete():
     message = None
     message_type = None
 
+    # En mode démo, afficher un message informatif
+    if APP_MODE == "demo":
+        # Compter les mails du domaine
+        domain_count = LAST_ANALYSIS.get(domain, {}).get('count', 0) if LAST_ANALYSIS else 0
+        message = f"⚠️ [{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
+        message_type = "info"
+        
+        # Supprimer le domaine de LAST_ANALYSIS (simulation)
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+        
+        sorted_results = LAST_ANALYSIS
+        return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
+
+    # Mode local : suppression réelle
     try:
         credentials = auth()
         service = get_gmail_service(credentials)
@@ -102,13 +155,13 @@ def delete():
         message_type = "error"
         sorted_results = LAST_ANALYSIS
 
-    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
 
 # Ajout à la safelist
 @app.route("/safelist", methods=["GET"])
 def view_safelist():
     safelist_domains = load_safelist()
-    return render_template("safelist.html", safelist_domains=safelist_domains)
+    return render_template("safelist.html", safelist_domains=safelist_domains, app_mode=APP_MODE)
 
 @app.route("/safelist", methods=["POST"])
 def add_safelist():
@@ -118,6 +171,19 @@ def add_safelist():
     message = None
     message_type = None
 
+    # En mode démo, simulation sans vraie modification
+    if APP_MODE == "demo":
+        message = f"✓ [{APP_MODE.upper()}] {domain} simulé en safelist"
+        message_type = "success"
+        
+        # Supprimer le domaine de LAST_ANALYSIS (simulation)
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+        
+        sorted_results = LAST_ANALYSIS
+        return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
+
+    # Mode local : vraie modification
     try:
         add_domain_to_safelist(domain)
         message = f"✓ {domain} ajouté à la safelist !"
@@ -134,7 +200,7 @@ def add_safelist():
         message_type = "error"
         sorted_results = LAST_ANALYSIS
 
-    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT)
+    return render_template("results.html", data=sorted_results, message=message, message_type=message_type, last_query=LAST_QUERY, last_updated_at=LAST_UPDATED_AT, app_mode=APP_MODE)
 
 @app.route("/remove-from-safelist", methods=["POST"])
 def remove_from_safelist():
@@ -142,25 +208,31 @@ def remove_from_safelist():
     message = None
     message_type = None
 
-    try:
-        safelist = load_safelist()
-        domain = domain.lower().strip()
-        
-        if domain in safelist:
-            safelist.remove(domain)
-            save_safelist(safelist)
-            message = f"✓ {domain} supprimé de la safelist !"
-            message_type = "success"
-        else:
-            message = f"✗ {domain} n'est pas dans la safelist"
+    # En mode démo, simulation sans vraie modification
+    if APP_MODE == "demo":
+        message = f"✓ [{APP_MODE.upper()}] {domain} retiré de la safelist simulée"
+        message_type = "success"
+    else:
+        # Mode local : vraie modification
+        try:
+            safelist = load_safelist()
+            domain = domain.lower().strip()
+            
+            if domain in safelist:
+                safelist.remove(domain)
+                save_safelist(safelist)
+                message = f"✓ {domain} supprimé de la safelist !"
+                message_type = "success"
+            else:
+                message = f"✗ {domain} n'est pas dans la safelist"
+                message_type = "error"
+
+        except Exception as e:
+            message = f"✗ Erreur lors de la suppression : {str(e)}"
             message_type = "error"
 
-    except Exception as e:
-        message = f"✗ Erreur lors de la suppression : {str(e)}"
-        message_type = "error"
-
     safelist_domains = load_safelist()
-    return render_template("safelist.html", safelist_domains=safelist_domains, message=message, message_type=message_type)
+    return render_template("safelist.html", safelist_domains=safelist_domains, message=message, message_type=message_type, app_mode=APP_MODE)
 
 # Actions sur un domaine
 @app.route("/domain/<domain>/delete-all", methods=["POST"])
@@ -170,30 +242,42 @@ def delete_domain_all(domain):
     message = None
     message_type = None
 
-    try:
-        credentials = auth()
-        service = get_gmail_service(credentials)
-        results = list_unsubscribe_emails(service)
+    # En mode démo, afficher un message informatif
+    if APP_MODE == "demo":
+        # Compter les mails du domaine
+        domain_count = LAST_ANALYSIS.get(domain, {}).get('count', 0) if LAST_ANALYSIS else 0
+        message = f"⚠️ [{APP_MODE.upper()}] {domain_count} mail(s) simulé(s) supprimé(s) de {domain}"
+        message_type = "info"
+        
+        # Supprimer le domaine de LAST_ANALYSIS (simulation)
+        if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+            del LAST_ANALYSIS[domain]
+    else:
+        # Mode local : suppression réelle
+        try:
+            credentials = auth()
+            service = get_gmail_service(credentials)
+            results = list_unsubscribe_emails(service)
 
-        if domain not in results:
-            message = f"✗ Domaine {domain} non trouvé"
+            if domain not in results:
+                message = f"✗ Domaine {domain} non trouvé"
+                message_type = "error"
+            else:
+                message_ids = results[domain]["message_ids"]
+                count = len(message_ids)
+
+                delete_emails(service, message_ids)
+
+                message = f"✓ {count} mails de {domain} ont été supprimés avec succès"
+                message_type = "success"
+                
+                # Supprimer le domaine de LAST_ANALYSIS
+                if LAST_ANALYSIS and domain in LAST_ANALYSIS:
+                    del LAST_ANALYSIS[domain]
+
+        except Exception as e:
+            message = f"✗ Erreur lors de la suppression : {str(e)}"
             message_type = "error"
-        else:
-            message_ids = results[domain]["message_ids"]
-            count = len(message_ids)
-
-            delete_emails(service, message_ids)
-
-            message = f"✓ {count} mails de {domain} ont été supprimés avec succès"
-            message_type = "success"
-            
-            # Supprimer le domaine de LAST_ANALYSIS
-            if LAST_ANALYSIS and domain in LAST_ANALYSIS:
-                del LAST_ANALYSIS[domain]
-
-    except Exception as e:
-        message = f"✗ Erreur lors de la suppression : {str(e)}"
-        message_type = "error"
 
     # Stocker les messages dans la session et rediriger
     session['message'] = message
@@ -207,45 +291,65 @@ def delete_domain_with_link(domain):
     message = None
     message_type = None
 
-    try:
-        credentials = auth()
-        service = get_gmail_service(credentials)
-        results = list_unsubscribe_emails(service)
-
-        if domain not in results:
-            message = f"✗ Domaine {domain} non trouvé"
-            message_type = "error"
-        else:
-            domain_data = results[domain]
-            message_ids_with_link = [
-                domain_data["message_ids"][i] 
-                for i, link in enumerate(domain_data["unsubscribe_links"]) 
-                if link
-            ]
+    # En mode démo, afficher un message informatif
+    if APP_MODE == "demo":
+        domain_data = LAST_ANALYSIS.get(domain) if LAST_ANALYSIS else None
+        if domain_data:
+            # Compter les mails avec lien (simulation)
+            links_with_url = [link for link in domain_data.get('unsubscribe_links', []) if link]
+            count = len(links_with_url)
             
-            if not message_ids_with_link:
+            if count > 0:
+                message = f"⚠️ [{APP_MODE.upper()}] {count} mail(s) avec lien simulé(s) supprimé(s) de {domain}"
+                message_type = "info"
+                del LAST_ANALYSIS[domain]
+            else:
                 message = f"✗ Aucun mail avec lien de désabonnement pour {domain}"
                 message_type = "error"
+        else:
+            message = f"✗ Domaine {domain} non trouvé"
+            message_type = "error"
+    else:
+        # Mode local : suppression réelle
+        try:
+            credentials = auth()
+            service = get_gmail_service(credentials)
+            results = list_unsubscribe_emails(service)
+
+            if domain not in results:
+                message = f"✗ Domaine {domain} non trouvé"
+                message_type = "error"
             else:
-                count = len(message_ids_with_link)
-                delete_emails(service, message_ids_with_link)
+                domain_data = results[domain]
+                message_ids_with_link = [
+                    domain_data["message_ids"][i] 
+                    for i, link in enumerate(domain_data["unsubscribe_links"]) 
+                    if link
+                ]
                 
-                message = f"✓ {count} mails de {domain} avec lien ont été supprimés"
-                message_type = "success"
+                if not message_ids_with_link:
+                    message = f"✗ Aucun mail avec lien de désabonnement pour {domain}"
+                    message_type = "error"
+                else:
+                    count = len(message_ids_with_link)
+                    delete_emails(service, message_ids_with_link)
+                    
+                    message = f"✓ {count} mails de {domain} avec lien ont été supprimés"
+                    message_type = "success"
 
-                # Récupérer les données fraîches après suppression
-                fresh_results = list_unsubscribe_emails(service)
-                
-                # Mettre à jour LAST_ANALYSIS avec les données fraîches
-                if fresh_results and domain in fresh_results:
-                    LAST_ANALYSIS[domain] = fresh_results[domain]
-                elif LAST_ANALYSIS and domain in LAST_ANALYSIS:
-                    # Si le domaine n'existe plus, le supprimer
-                    del LAST_ANALYSIS[domain]
+                    # Récupérer les données fraîches après suppression
+                    fresh_results = list_unsubscribe_emails(service)
+                    
+                    # Mettre à jour LAST_ANALYSIS avec les données fraîches
+                    if fresh_results and domain in fresh_results:
+                        LAST_ANALYSIS[domain] = fresh_results[domain]
+                    elif LAST_ANALYSIS and domain in LAST_ANALYSIS:
+                        # Si le domaine n'existe plus, le supprimer
+                        del LAST_ANALYSIS[domain]
 
-    except Exception as e:
-        message = f"✗ Erreur lors de la suppression : {str(e)}"
-        message_type = "error"
+        except Exception as e:
+            message = f"✗ Erreur lors de la suppression : {str(e)}"
+            message_type = "error"
 
     # Vérifier si le domaine n'a plus de mails
     domain_data = LAST_ANALYSIS.get(domain) if LAST_ANALYSIS else None
@@ -268,7 +372,8 @@ def delete_domain_with_link(domain):
             total_count=domain_data.get('count', 0) if domain_data else 0,
             unsubscribe_count=unsubscribe_count,
             message=message,
-            message_type=message_type
+            message_type=message_type,
+            app_mode=APP_MODE
         )
 
 @app.route("/domain/<domain>/open-unsubscribe", methods=["POST"])
@@ -294,86 +399,7 @@ def open_unsubscribe_link(domain):
 
 
 if __name__ == "__main__":
+    print(f"\n{'='*60}")
+    print(f"Application en mode : {APP_MODE.upper()}")
+    print(f"{'='*60}\n")
     app.run(debug=True)
-
-# def main():
-#     # Connexion avec OAuth2
-#     credentials = auth()
-
-#     # Service pour la récupération des mails
-#     service = get_gmail_service(credentials)
-
-#     # Récupération des mails
-#     dict_senders = list_unsubscribe_emails(service)
-    
-#     # Si pas de domaine
-#     if not dict_senders:
-#         print("Aucun domaine à traiter")
-#         return
-    
-#     # Chargement de la safelist
-#     safelist = load_safelist()
-
-#     # Filtrer les domaines
-#     filtered_senders = filter_safelist(dict_senders, safelist)
-
-#     # Lister les domaines avec le nombre de mails
-#     mapping = {i + 1: {'domain': domain, 'count': filtered_senders[domain]['count'], 'subjects': filtered_senders[domain]['subjects'], 'unsubscribe_links': filtered_senders[domain]['unsubscribe_links']} 
-#            for i, domain in enumerate(filtered_senders)}
-
-#     # Tant qu'il y a des domaines dans mapping
-#     while mapping:
-
-#         # Affichage de la liste
-#         display_domains(mapping)
-
-#         # Choix du domaine
-#         domain, count, subjects = select_domain(mapping)
-
-#         # Affichage du menu des actions
-#         display_actions(domain, count, filtered_senders[domain]['unsubscribe_links'])
-
-#         # Choix de l'action
-#         action = select_action()
-
-#         match(action):
-#             # Quitter le programme
-#             case 0: break
-#             # Supprimer tous les mails
-#             case 1:
-#                 if confirm_deletion(domain, count, subjects, filtered_senders[domain]['unsubscribe_links']) == True:
-#                     delete_emails(service, filtered_senders[domain]["message_ids"])
-#                     del filtered_senders[domain]
-#                     mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count'], 'subjects': filtered_senders[d]['subjects'], 'unsubscribe_links': filtered_senders[d]['unsubscribe_links']} 
-#                             for i, d in enumerate(filtered_senders)}
-#             # Supprimer seulement les mails avec lien de désinscription
-#             case 2:
-#                 ids_with_link = [filtered_senders[domain]["message_ids"][i] 
-#                                 for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if link]
-#                 if ids_with_link:
-#                     if confirm_deletion(domain, len(ids_with_link), subjects, filtered_senders[domain]['unsubscribe_links']) == True:
-#                         delete_emails(service, ids_with_link)
-#                         # Mettre à jour les données du domaine
-#                         filtered_senders[domain]["message_ids"] = [filtered_senders[domain]["message_ids"][i] 
-#                                                                     for i, link in enumerate(filtered_senders[domain]["unsubscribe_links"]) if not link]
-#                         filtered_senders[domain]["unsubscribe_links"] = [link for link in filtered_senders[domain]["unsubscribe_links"] if not link]
-#                         filtered_senders[domain]["count"] -= len(ids_with_link)
-#                 else:
-#                     print("Aucun mail avec lien de désinscription pour ce domaine.")
-#             # Ajouter à la safelist
-#             case 3:
-#                 add_domain_to_safelist(domain)
-#                 del filtered_senders[domain]
-#                 mapping = {i + 1: {'domain': d, 'count': filtered_senders[d]['count'], 'subjects': filtered_senders[d]['subjects'], 'unsubscribe_links': filtered_senders[d]['unsubscribe_links']} 
-#                             for i, d in enumerate(filtered_senders)}
-#             # Retour au menu principale
-#             case 4:
-#                 continue
-
-#             case _:
-#                 print("Choix invalide")
-
-#     # Sauvegarde de la safelist
-#     save_safelist(safelist)
-    
-# main()
