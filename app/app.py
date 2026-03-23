@@ -400,4 +400,16 @@ def open_unsubscribe_link(domain):
 
 
 if __name__ == "__main__":
-    app.run(debug=app.debug)
+    # Lire le port depuis la variable d'environnement
+    # Default à 5000 en local pour le développement
+    port = int(os.getenv("PORT", 5000))
+    
+    # Afficher les infos de démarrage
+    print(f"\n{'='*70}")
+    print(f"Serveur démarrage sur le port {port}")
+    print(f"   Debug: {app.debug}")
+    print(f"   URL: http://localhost:{port}")
+    print(f"{'='*70}\n")
+    
+    # Lancer l'app
+    app.run(host="0.0.0.0", port=port, debug=app.debug)

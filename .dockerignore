@@ -1,0 +1,16 @@
+# Git
+.git
+.gitignore
+
+#env
+venv
+.env
+
+# Python
+__pycache__
+*.pic
+
+# secrets
+token.json
+credentials.json
+
