@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Installer les dépendances
-RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copier le projet
 COPY . .
@@ -23,4 +23,4 @@ COPY . .
 EXPOSE 8080
 
 # Démarrage de Gunicorn
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080"]
+CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:$PORT"]
