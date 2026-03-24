@@ -29,7 +29,6 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Configuration pour l'environnement de développement."""
 
     DEBUG = True
     FLASK_ENV = "development"
@@ -37,7 +36,6 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Configuration pour l'environnement de production."""
 
     DEBUG = False
     FLASK_ENV = "production"
@@ -45,17 +43,15 @@ class ProductionConfig(Config):
 
     @classmethod
     def validate(cls):
-        """Valide que tous les paramètres critiques sont définis en production."""
         if not cls.SECRET_KEY:
             raise ValueError(
                 "CRITICAL: FLASK_SECRET_KEY not set in production! "
                 "Set the environment variable and restart."
             )
-        print("✓ Production config validated")
+        print("Production config validated")
 
 
 class DemoConfig(Config):
-    """Configuration pour le mode démo."""
 
     DEBUG = True
     APP_MODE = "demo"
@@ -79,7 +75,6 @@ def get_config():
 
 # Validation à l'import
 def validate_config():
-    """Valide la configuration au démarrage."""
     config = get_config()
 
     # Vérifier la secret_key en dev

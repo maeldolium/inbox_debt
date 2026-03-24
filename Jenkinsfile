@@ -8,6 +8,30 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    # Créer un environnement virtuel Python
+                    python -m venv venv
+                    
+                    # Activer le venv et installer les dépendances
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    # Activer le venv et lancer pytest
+                    . venv/bin/activate
+                    pytest tests/ -v --tb=short
+                '''
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t inbox_debt .'
@@ -24,6 +48,17 @@ pipeline {
             steps {
                 sh 'sleep 5'
                 sh 'curl -f http://localhost:8081'
+            }
+        }
+
+        stage('Deploy Railway') {
+            steps {
+                sh '''
+                    # Déployer vers Railway si configuré
+                    echo "Déploiement vers Railway..."
+                    # Remplacer par la véritable commande de déploiement Railroad
+                    # railway up
+                '''
             }
         }
     }

@@ -23,13 +23,16 @@ secret_key = os.environ.get('FLASK_SECRET_KEY')
 if not secret_key:
     # Fallback pour dev: génère une clé aléatoire (sera différente à chaque redémarrage)
     secret_key = secrets.token_hex(32)
-    print("⚠️  FLASK_SECRET_KEY non trouvée. Clé auto-générée (sessions non persistantes)")
+    print("FLASK_SECRET_KEY non trouvée. Clé auto-générée (sessions non persistantes)")
 
 app.config['SECRET_KEY'] = secret_key
 
 # Valider et charger la configuration
 config = validate_config()
 app.config.from_object(config)
+
+# Définir la secret_key de manière sécurisée
+app.secret_key = config.SECRET_KEY
 
 print(f"\n{'='*70}")
 print(f"Application initialisée")
