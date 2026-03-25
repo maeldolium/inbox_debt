@@ -40,7 +40,7 @@ pipeline {
 
         stage('Run Container Test') {
             steps {
-                sh 'docker run -d --name inbox_debt_test -p 8081:8080 -e APP_MODE=demo inbox_debt'
+                sh 'docker run -d --name inbox_debt_test -p 8081:8080 -e APP_MODE=demo -e PORT=8080 inbox_debt'
             }
         }
 
@@ -62,6 +62,7 @@ pipeline {
 
     post {
         always {
+            sh 'docker logs inbox_debt_test'
             sh 'docker stop inbox_debt_test || true'
             sh 'docker rm inbox_debt_test || true'
         }
