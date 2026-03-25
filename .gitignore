@@ -212,3 +212,6 @@ token.json
 
 # OS
 .DS_Store
+
+# Railway
+.railway/

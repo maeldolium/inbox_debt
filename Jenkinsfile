@@ -53,12 +53,9 @@ pipeline {
 
         stage('Deploy Railway') {
             steps {
-                sh '''
-                    # Déployer vers Railway si configuré
-                    echo "Déploiement vers Railway..."
-                    # Remplacer par la véritable commande de déploiement Railroad
-                    # railway up
-                '''
+                withCredentials([string(credentialsId: 'railway-project-token', variable: 'RAILWAY_TOKEN')]) {
+                    sh 'railway up --ci'
+                }
             }
         }
     }
