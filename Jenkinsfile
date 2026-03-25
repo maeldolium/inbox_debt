@@ -12,7 +12,7 @@ pipeline {
             steps {
                 sh '''
                     # Créer un environnement virtuel Python
-                    python -m venv venv
+                    python3 -m venv venv
                     
                     # Activer le venv et installer les dépendances
                     . venv/bin/activate
