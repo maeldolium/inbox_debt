@@ -54,7 +54,7 @@ pipeline {
         stage('Deploy Railway') {
             steps {
                 withCredentials([string(credentialsId: 'railway-project-token', variable: 'RAILWAY_TOKEN')]) {
-                    sh 'railway up --ci --service inbox_debt'
+                    sh 'railway up --ci --detach --service inbox_debt'
                 }
             }
         }
