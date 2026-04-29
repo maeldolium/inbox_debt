@@ -1,6 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from gmail_api.parsers import extract_domain, extract_http_unsubscribe
+from app.gmail_api.parsers import extract_domain, extract_http_unsubscribe
 import time
 
 # Requête de recherche utilisée pour les mails
