@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from auth.oauth_flow import auth
-from gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails, SEARCH_QUERY
-from gmail_api.actions import delete_emails
-from ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
-from config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
-from config.settings import APP_MODE
-from config.config import get_config, validate_config
 import webbrowser
 from datetime import datetime
 import json
 import os
 import secrets
+
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+
+from .auth.oauth_flow import auth
+from .gmail_api.fetch_emails import get_gmail_service, list_unsubscribe_emails, SEARCH_QUERY
+from .gmail_api.actions import delete_emails
+from .ux.ux import display_domains, select_domain, display_actions, select_action, confirm_deletion, count_with_without_link_mails
+from .config.safelist_manager import load_safelist, save_safelist, add_domain_to_safelist, filter_safelist
+from .config.settings import APP_MODE
+from .config.config import get_config, validate_config
 
 LAST_ANALYSIS = None
 LAST_QUERY = None
